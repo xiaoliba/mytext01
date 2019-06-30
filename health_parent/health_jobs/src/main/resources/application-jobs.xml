@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    <context:annotation-config/>
+    <!--任务类-->
+    <bean id="myJob" class="com.itheima.jobs.ClearImgJob"/>
+    <!--任务策略-->
+    <bean id="jobDetails" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <!--调用spring容器中的哪个对象，myJob-->
+        <property name="targetObject" ref="myJob"/>
+        <!--调用哪个方法-->
+        <property name="targetMethod" value="doJob"/>
+        <!--这个任务按顺序来执行，不要并发-->
+        <property name="concurrent" value="false"/>
+    </bean>
+
+    <!--触发器 定义什么时候来触发任务-->
+    <bean id="trigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <!--七子表达式: 秒 分 时 日 月 周 年-->
+        <!--0/2 * * * * ? 从0秒开始每间隔2秒就触发一次   每天更新一次  -->
+        <property name="cronExpression" value="0 55 23 * * ?"/>
+        <!--绑定执行的策略-->
+        <property name="jobDetail" ref="jobDetails"/>
+    </bean>
+
+    <!--调度器 根据当前系统时间来调试-->
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="trigger"/>
+            </list>
+        </property>
+    </bean>
+
+    <import resource="classpath:spring-redis.xml"/>
+</beans>

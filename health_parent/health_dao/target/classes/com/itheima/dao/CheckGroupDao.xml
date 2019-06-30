@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+        <!DOCTYPE mapper
+                PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+                "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.itheima.dao.CheckGroupDao">
+
+    <resultMap type="com.itheima.pojo.CheckGroup" id="baseResultMap">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="helpCode" property="helpCode"/>
+        <result column="sex" property="sex"/>
+        <result column="remark" property="remark"/>
+        <result column="attention" property="attention"/>
+    </resultMap>
+    <resultMap type="com.itheima.pojo.CheckGroup" id="findByIdResultMap"
+               extends="baseResultMap">
+        <collection property="checkItems" javaType="ArrayList"
+                    ofType="com.itheima.pojo.CheckItem" column="id"
+                    select="com.itheima.dao.CheckItemDao.findCheckItemById">
+        </collection>
+    </resultMap>
+
+    <!--根据套餐id查询检查项信息-->
+    <select id="findCheckGroupById" resultMap="findByIdResultMap">
+        select id, code, name, helpCode, sex, remark, attention from t_checkgroup where id
+        in (select checkgroup_id from t_package_checkgroup where package_id=#{id})
+    </select>
+
+    <!--新增检查组-->
+    <insert id="add" parameterType="checkgroup">
+        <selectKey resultType="java.lang.Integer" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into t_checkgroup (code, name, helpCode, sex, remark, attention)
+        values (#{code},#{name},#{helpCode},#{sex},#{remark},#{attention})
+    </insert>
+
+    <!--设置检查组和检查项的关联关系-->
+    <insert id="setCheckGroupAndCheckItem">
+        insert into t_checkgroup_checkitem(checkgroup_id, checkitem_id)
+        values
+        <foreach collection ="checkitemIds" item="checkitemId" index= "index" separator =",">
+            (#{checkgroupId},#{checkitemId})
+        </foreach>
+    </insert>
+
+    <!--查询所有-->
+    <select id="findAllData" parameterType="string" resultType="checkgroup">
+        select id, code, name, helpCode, sex, remark, attention from t_checkgroup
+        <if test="value!=null and value.length>0">
+            where code like #{value} or name like #{value} or helpCode like #{value}
+        </if>
+    </select>
+
+    <!--根据id查询检查组-->
+    <select id="findById" parameterType="int" resultMap="findByIdResultMap">
+        select id, code, name, helpCode, sex, remark, attention from t_checkgroup where id=#{id}
+    </select>
+
+    <!--根据检查组id查询所有的检查项id-->
+    <select id="getCheckitemIdByCheckgroupId" parameterType="int" resultType="int">
+        select checkitem_id from t_checkgroup_checkitem where checkgroup_id=#{id}
+    </select>
+
+    <!--根据id删除检查组-->
+    <delete id="deleteById" parameterType="int">
+        delete from t_checkgroup where id=#{id}
+    </delete>
+
+    <!--更新检查组-->
+    <update id="update" parameterType="checkgroup">
+        update t_checkgroup
+        set
+        code=#{code}, name=#{name}, helpCode=#{helpCode}, sex=#{sex}, remark=#{remark}, attention=#{attention}
+        where id=#{id}
+    </update>
+    <!-- 批量更新
+    <update id="WHOLESALE-UPDATE-REBATE-CONFIG-BY-PRODUCTCODE" >
+	UPDATE
+		rebate_config
+	SET
+		rebate_type = 'BY_RATE',rebate_config_value = #rebateConfigValue#
+	WHERE
+		<iterate  property="list" conjunction="or" open="(" close=")">
+		  product_code =#list[]#
+		</iterate>
+    </update>
+
+    标签说明:
+        prepend 可被覆盖的 SQL 语句组成部分，添加在语句的前面（可选）
+        property 类型为 java.util.List 的用于遍历的元素（必选）
+        open 整个遍历内容体开始的字符串，用于定义括号（可选）
+        close 整个遍历内容体结束的字符串，用于定义括号（可选）
+        conjunction 每次遍历内容之间的字符串，用于定义 AND 或 OR（可选）
+    -->
+
+    <!--根据检查组id删除其对应的关系-->
+    <delete id="deleteAssociation" parameterType="int">
+        delete from t_checkgroup_checkitem where checkgroup_id=#{id}
+    </delete>
+
+    <!--查询两表的关联关系-->
+    <select id="findgroupIdByCheckGroupCheckItem" parameterType="int" resultType="int">
+        select count(0) from t_checkgroup_checkitem where checkgroup_id=#{id}
+    </select>
+
+    <!--查询两表的关联关系-->
+    <select id="findgroupIdByPackageCheckGroup" parameterType="int" resultType="int">
+        select count(0) from t_package_checkgroup where checkgroup_id=#{id}
+    </select>
+
+    <!--查询所有-->
+    <select id="findAll"  resultType="checkgroup">
+        select id, code, name, helpCode, sex, remark, attention from t_checkgroup
+    </select>
+</mapper>
